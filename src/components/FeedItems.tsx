@@ -175,34 +175,48 @@ const FeedItems: React.FC<FeedItemsProps> = ({
                 // For GitHub Atom feeds, look for type="text/html" first, then fall back to rel="alternate"
                 const htmlLink =
                   item.link.find((l) => l.$ && l.$.type === "text/html") ||
+                  item.link.find((l) => l.$ && l.$.rel === "alternate") ||
                   item.link.find((l) => l.rel === "alternate") ||
+                  item.link.find((l) => l.href) ||
                   item.link[0];
-                itemLink = htmlLink?.href || htmlLink?.$.href || "";
+                itemLink = htmlLink?.$?.href || htmlLink?.href || "";
               } else {
-                itemLink = item.link.href || "";
+                itemLink = item.link.href || item.link.$?.href || "";
               }
             }
 
-            // If no link found, try to construct it from GitHub Atom feed ID format
+            // If no link found, try guid which often contains the URL
+            if (!itemLink && item.guid && typeof item.guid === "string") {
+              // Check if guid is a URL
+              if (item.guid.startsWith("http")) {
+                itemLink = item.guid;
+              }
+            }
+
+            // If still no link found, try to construct it from GitHub Atom feed ID format
             if (!itemLink && item.id && typeof item.id === "string") {
               // GitHub Atom feed IDs look like: "tag:github.com,2008:Repository/611397346/stable-20250907"
-              const idMatch = item.id.match(
+              // or for discussions: "tag:github.com,2008:9214669"
+              const repoIdMatch = item.id.match(
                 /^tag:github\.com,\d+:Repository\/(\d+)\/(.+)$/,
               );
-              if (idMatch) {
-                const [, repoId, tag] = idMatch;
+              const discussionIdMatch = item.id.match(
+                /^tag:github\.com,\d+:(\d+)$/,
+              );
+              
+              if (repoIdMatch) {
+                const [, repoId, tag] = repoIdMatch;
                 // For GitHub releases, we need to determine the repo name from the feedId
                 if (feedId === "bluefinReleases") {
                   itemLink = `https://github.com/ublue-os/bluefin/releases/tag/${tag}`;
                 } else if (feedId === "bluefinLtsReleases") {
                   itemLink = `https://github.com/ublue-os/bluefin-lts/releases/tag/${tag}`;
-                } else if (
-                  feedId === "bluefinDiscussions" ||
-                  feedId === "bluefinAnnouncements"
-                ) {
-                  // For discussions, the ID format might be different, but we'll try
-                  itemLink = `https://github.com/ublue-os/bluefin/discussions/${tag}`;
                 }
+              } else if (discussionIdMatch && (feedId === "bluefinDiscussions" || feedId === "bluefinAnnouncements")) {
+                // For discussions, try to extract from the title or use the entry structure
+                // The link should have been extracted above, but this is a fallback
+                // We can't reliably construct discussion URLs from just the ID
+                // This case should rarely be hit if link extraction works properly
               }
             }
 
