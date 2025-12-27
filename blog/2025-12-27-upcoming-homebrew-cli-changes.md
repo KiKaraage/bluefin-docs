@@ -2,7 +2,7 @@
 title: "Upcoming changes to Homebrew and CLI behavior"
 slug: upcoming-homebrew-cli-changes
 authors: castrojo
-tags: [homebrew, development, cli]
+tags: [announcements, homebrew, development]
 ---
 
 We hope that you're enjoying the holidays! We're making some important changes to how Homebrew and command-line tools work in Bluefin. These changes will land in this Tuesday's weekly build.
@@ -17,4 +17,4 @@ Atuin's been causing too many issues for us, so we've elected to turn it off by 
 
 ## More updates coming
 
-We will be publishing a large year-in-review update next week that will cover much more details, but we wanted to give you a heads up as soon as these land as they are behavioral changes. 
+We will be publishing a large year-in-review update next week that will cover much more details, but we wanted to give you a heads up as soon as these land as they are behavioral changes. In the meantime we've set up [todo.projectbluefin.io](https://todo.projectbluefin.io) for you to follow along the major changes coming in Bluefin. Thanks!
