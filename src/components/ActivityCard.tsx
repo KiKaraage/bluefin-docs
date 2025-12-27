@@ -176,7 +176,7 @@ export default function ActivityCard({
 
         {assignees.length > 0 && (
           <div className={styles.assignees}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--ifm-color-emphasis-600)' }}>
+            <span className={styles.assigneeIcon}>
               👤
             </span>
             <div className={styles.avatarGroup}>
