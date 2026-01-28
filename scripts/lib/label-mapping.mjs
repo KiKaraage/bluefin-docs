@@ -38,6 +38,7 @@ export const LABEL_COLORS = {
   "kind/github-action": "2088FF", // Good blue
   "kind/parity": "9333EA", // Good purple (was too light)
   "kind/renovate": "3B82F6", // Brighter blue (was too dark)
+  "kind/translation": "8B5CF6", // Purple for i18n/l10n work
 
   // Common labels
   "good first issue": "7057FF",
@@ -52,12 +53,12 @@ export const LABEL_COLORS = {
  * Label categories matching CONTEXT.md structure
  */
 export const LABEL_CATEGORIES = {
-  "🖥️ Desktop": ["area/gnome", "area/aurora", "area/bling"],
-  "🛠️ Development": ["area/dx"],
-  "📦 Ecosystem": ["area/brew", "area/bluespeed", "area/flatpak"],
-  "⚙️ System Services & Policies": ["area/services", "area/policy"],
-  "💻 Hardware": ["area/hardware", "area/nvidia"],
-  "🏗️ Infrastructure": [
+  Desktop: ["area/gnome", "area/aurora", "area/bling"],
+  Development: ["area/dx"],
+  Ecosystem: ["area/brew", "area/bluespeed", "area/flatpak"],
+  "System Services & Policies": ["area/services", "area/policy"],
+  Hardware: ["area/hardware", "area/nvidia"],
+  Infrastructure: [
     "area/iso",
     "area/upstream",
     "area/buildstream",
@@ -65,18 +66,17 @@ export const LABEL_CATEGORIES = {
     "area/just",
     "area/testing",
   ],
-  "🔧 Bug Fixes": ["kind/bug"],
-  "🚀 Enhancements": ["kind/enhancement"],
-  "📚 Documentation": ["kind/documentation"],
-  "🧹 Tech Debt": ["kind/tech-debt"],
-  "🤖 Automation": ["kind/automation", "kind/github-action", "kind/renovate"],
+  Documentation: ["kind/documentation"],
+  "Tech Debt": ["kind/tech-debt"],
+  Automation: ["kind/automation", "kind/github-action", "kind/renovate"],
+  Localization: ["kind/translation"],
 };
 
 /**
  * Get category for a label name
  *
  * @param {string} labelName - Label name (e.g., "area/gnome")
- * @returns {string} Category with emoji (e.g., "🖥️ Desktop") or "📋 Other"
+ * @returns {string} Category name (e.g., "Desktop") or "Other"
  */
 export function getCategoryForLabel(labelName) {
   for (const [category, labels] of Object.entries(LABEL_CATEGORIES)) {
@@ -84,7 +84,7 @@ export function getCategoryForLabel(labelName) {
       return category;
     }
   }
-  return "📋 Other";
+  return "Other";
 }
 
 /**

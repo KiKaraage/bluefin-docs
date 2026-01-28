@@ -1,27 +1,61 @@
 # Project Milestones: Bluefin Documentation
 
-## v1.1 Weekly Reports Feature (In Progress: Started 2026-01-26)
+# Project Milestones: Bluefin Documentation
 
-**Goal:** Add weekly reports section to aggregate and display project activity
+## v1.1 Monthly Reports Feature (Shipped: 2026-01-27, Enhanced: 2026-01-28)
 
-**Status:** Planning  
-**Started:** 2026-01-26
+**Goal:** Add automated monthly reports section to aggregate and display project activity
 
-**Phases planned:** 5 phases (8 days estimated)
+**Status:** ✅ SHIPPED & ENHANCED  
+**Started:** 2026-01-26  
+**Initial Launch:** 2026-01-27  
+**Post-Launch Improvements:** 2026-01-28
 
-**Key deliverables:**
+**Phases completed:** 2 phases (Phase 3 deferred)
 
-- Weekly reports directory structure with markdown-based content
-- Auto-generated weekly activity data (releases, discussions, blog posts, contributors)
-- Display components (WeeklyActivity, WeeklyReportCard, WeeklySummary)
-- Weekly reports listing page with chronological sorting
-- RSS/Atom feed for reports
+**Key accomplishments:**
+
+- Automated monthly report generation from GitHub project board data
+- Multi-blog Docusaurus configuration with `/reports` route
+- Historical contributor tracking with query-based detection (regeneration-safe)
+- Label categorization and badge formatting matching projectbluefin/common
+- Bot filtering and activity aggregation
+- Planned vs Opportunistic work subsections
+- Consistent ChillOps messaging for empty sections
+- RSS feed at `/reports/rss.xml`
 - Navigation integration and cross-links
 - Mobile-responsive design
+- Monthly automation via GitHub Actions (last day of month)
 
-**Requirements:** 19 requirements across 5 phases (FOUND, DISP, CONT, NAV, DOC)
+**Post-launch improvements (2026-01-28):**
 
-**Current status:** ROADMAP.md and REQUIREMENTS.md created, ready for phase planning
+- ✅ Fixed contributor duplicate display issues
+- ✅ GitHub Sponsors integration (8 known sponsors)
+- ✅ Professional button design with pixel-perfect alignment
+- ✅ Destiny 2 Guardian theme ("New Lights" terminology)
+- ✅ Inspirational quotes (Commander Zavala, Lord Saladin)
+- ✅ Symbolic Unicode icons (★ and ♥) for polished look
+
+**Stats:**
+
+- 15/15 Phase 1 requirements shipped (100%)
+- 2 phases completed, 1 deferred (documentation met via AGENTS.md)
+- Post-launch improvements: PR #593 (2026-01-27) + 5 commits (2026-01-28)
+- Timeline: 2026-01-26 to 2026-01-28 (2 days execution + 1 day refinement)
+- Reports live: December 2025, January 2026 (regenerated with improvements)
+
+**Git range:**
+
+- Initial: Phase 1 commits in `gsd/milestone-v1.1-weekly-reports` → PR #593
+- Post-launch: `c6780ca` → `15b2c21` (5 commits)
+
+**Artifacts:**
+
+- `.planning/milestones/v1.1-COMPLETION.md` - Initial completion report
+- `.planning/milestones/v1.1-POST-LAUNCH-IMPROVEMENTS.md` - Enhancement details
+- `.planning/session-summary-2026-01-28.md` - Technical session summary
+
+**What's next:** Milestone fully complete with professional polish. Ready for v1.2 planning or other priorities.
 
 ---
 

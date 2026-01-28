@@ -12,6 +12,7 @@ import {
   LABEL_COLORS,
   generateBadge,
 } from "./label-mapping.mjs";
+import { getSponsorUrl } from "./github-sponsors.mjs";
 
 /**
  * Generate complete report markdown
@@ -54,10 +55,32 @@ export function generateReportMarkdown(
   const monthYear = `${monthNames[month]} ${year}`;
   const dateStr = format(endDate, "yyyy-MM-dd");
 
+  // Dinosaur-themed monthly titles (catchy and alliterative)
+  const monthlyTitles = [
+    "Jurassic January",
+    "Fossil February",
+    "Mesozoic March",
+    "Allosaurus April",
+    "Megalosaurus May",
+    "Juravenator June",
+    "Jovial July",
+    "Archaeopteryx August",
+    "Stegosaurus September",
+    "Ornithopod October",
+    "Nodosaurus November",
+    "Deinonychus December",
+  ];
+  const monthlyTitle = monthlyTitles[month];
+
   // Generate frontmatter with MDX import for GitHubProfileCard component
+  // Slug format: /YYYY/MM (e.g., /2026/01)
+  const monthPadded = String(month + 1).padStart(2, "0");
+  const slug = `/${year}/${monthPadded}`;
+
   const frontmatter = `---
-title: "Monthly Report: ${monthYear}"
+title: "${monthlyTitle} ${year}"
 date: ${dateStr}
+slug: ${slug}
 tags: [monthly-report, project-activity]
 ---
 
@@ -89,6 +112,18 @@ import GitHubProfileCard from '@site/src/components/GitHubProfileCard';
   // Track displayed items to avoid duplicates across categories
   const displayedUrls = new Set();
 
+  // Split bot activity into homebrew and other
+  const homebrewActivity = botActivity.filter(
+    (activity) =>
+      activity.repo === "ublue-os/homebrew-tap" ||
+      activity.repo === "ublue-os/homebrew-experimental-tap",
+  );
+  const otherBotActivity = botActivity.filter(
+    (activity) =>
+      activity.repo !== "ublue-os/homebrew-tap" &&
+      activity.repo !== "ublue-os/homebrew-experimental-tap",
+  );
+
   // Generate area sections with planned vs opportunistic subsections
   const areaSections = areaCategories
     .map(([categoryName, categoryLabels]) => {
@@ -109,10 +144,27 @@ import GitHubProfileCard from '@site/src/components/GitHubProfileCard';
           return `![${labelName}](https://img.shields.io/badge/${encodedName}-${color}?style=flat-square)`;
         })
         .join(" ");
-      return `### ${cleanCategoryName}\n\n${labelBadges}\n\n${section}`;
+
+      // Add Homebrew updates as a subsection under Development category
+      let fullSection = `## ${cleanCategoryName}\n\n${labelBadges}\n\n${section}`;
+      if (
+        (cleanCategoryName === "Development" ||
+          categoryName.includes("Development")) &&
+        homebrewActivity.length > 0
+      ) {
+        const homebrewSection =
+          generateHomebrewUpdatesSection(homebrewActivity);
+        // Extract just the content (remove the ## heading and adjust remaining headings)
+        const homebrewContent = homebrewSection
+          .replace(/^## Homebrew Package Updates\n\n/, "")
+          .replace(/^### /gm, "#### "); // Convert ### to #### for proper nesting
+        fullSection += `\n\n### Homebrew Package Updates\n\n${homebrewContent}`;
+      }
+
+      return fullSection;
     })
     .filter((section) => section)
-    .join("\n\n");
+    .join("\n\n---\n\n");
 
   // Generate kind sections with planned vs opportunistic subsections
   const kindSections = kindCategories
@@ -134,16 +186,14 @@ import GitHubProfileCard from '@site/src/components/GitHubProfileCard';
           return `![${labelName}](https://img.shields.io/badge/${encodedName}-${color}?style=flat-square)`;
         })
         .join(" ");
-      return `### ${cleanCategoryName}\n\n${labelBadges}\n\n${section}`;
+      return `## ${cleanCategoryName}\n\n${labelBadges}\n\n${section}`;
     })
-    .join("\n\n");
+    .join("\n\n---\n\n");
 
-  // Combine with section headers
-  const categorySections = `# Focus Area
+  // Combine sections without group headers
+  const categorySections = `${areaSections}
 
-${areaSections}
-
-# Work by Type
+---
 
 ${kindSections}`;
 
@@ -151,8 +201,20 @@ ${kindSections}`;
   const allItems = [...plannedItems, ...opportunisticItems];
   const uncategorizedSection = generateUncategorizedSection(allItems);
 
-  // Generate bot activity section
-  const botSection = generateBotActivitySection(botActivity);
+  // Generate bot activity section (non-homebrew only, since homebrew is now under Development)
+  // Calculate total PRs (human + all bots including homebrew)
+  const totalBotPRs = botActivity.reduce(
+    (sum, activity) => sum + activity.count,
+    0,
+  );
+  const totalHumanPRs = plannedItems.length + opportunisticItems.length;
+  const totalPRs = totalHumanPRs + totalBotPRs;
+
+  const botSection = generateBotActivitySection(
+    otherBotActivity,
+    totalPRs,
+    totalBotPRs,
+  );
 
   // Generate contributors section
   const contributorsSection = generateContributorsSection(
@@ -163,7 +225,7 @@ ${kindSections}`;
   // Generate footer with cross-links
   const footer = `---
 
-*Want to see the latest OS releases? Check out the [Changelogs](/changelogs) page. For announcements and deep dives, read our [Blog](/blog).*
+*Want to see the latest OS releases? Check out the [Changelogs](/changelogs). For announcements and deep dives, read our [Blog](/blog).*
 
 *This report was automatically generated from [todo.projectbluefin.io](https://todo.projectbluefin.io).*
 
@@ -220,18 +282,22 @@ export function generateCategorySectionWithSubsections(
 
   const sections = [];
 
-  // Planned Work subsection
+  // Planned Work subsection (always show, with ChillOps if empty)
   if (planned.length > 0) {
     sections.push(
-      `#### 📋 Planned Work\n\n${formatItemList(planned, displayedUrls)}`,
+      `### Planned Work\n\n${formatItemList(planned, displayedUrls)}`,
     );
+  } else {
+    sections.push(`### Planned Work\n\n> Status: _ChillOps_`);
   }
 
-  // Opportunistic Work subsection
+  // Opportunistic Work subsection (always show, with ChillOps if empty)
   if (opportunistic.length > 0) {
     sections.push(
-      `#### ⚡ Opportunistic Work\n\n${formatItemList(opportunistic, displayedUrls)}`,
+      `### Opportunistic Work\n\n${formatItemList(opportunistic, displayedUrls)}`,
     );
+  } else {
+    sections.push(`### Opportunistic Work\n\n> Status: _ChillOps_`);
   }
 
   return sections.join("\n\n");
@@ -255,6 +321,7 @@ function filterItemsByLabels(items, categoryLabels) {
 
 /**
  * Format list of items as markdown
+ * Format: title by @author in #PR (Hyperlight-style single-line format)
  *
  * @param {Array} items - Items to format
  * @param {Set} displayedUrls - Set to track displayed URLs
@@ -264,15 +331,17 @@ function formatItemList(items, displayedUrls) {
   const lines = items.map((item) => {
     const type = item.content.__typename === "PullRequest" ? "PR" : "Issue";
     const number = item.content.number;
-    const title = item.content.title;
+    // Escape curly braces in titles to prevent MDX interpretation as JSX
+    const title = item.content.title.replace(/{/g, "\\{").replace(/}/g, "\\}");
     const url = item.content.url;
     const author = item.content.author?.login || "unknown";
 
     // Mark this URL as displayed
     displayedUrls.add(url);
 
+    // Hyperlight-style format: title by @author in #PR
     // Use zero-width space to prevent GitHub notifications
-    return `- [#${number} ${title}](${url}) by @\u200B${author}`;
+    return `- ${title} by [@\u200B${author}](https://github.com/${author}) in [#${number}](${url})`;
   });
 
   return lines.join("\n");
@@ -280,6 +349,7 @@ function formatItemList(items, displayedUrls) {
 
 /**
  * Generate category section (legacy - for backwards compatibility)
+ * Format: title by @author in #PR (Hyperlight-style single-line format)
  *
  * @param {Array} items - Items completed during report period
  * @param {string} categoryName - Category display name
@@ -325,13 +395,16 @@ export function generateCategorySection(items, categoryName, categoryLabels) {
     entries.forEach(({ item, label }) => {
       const type = item.content.__typename === "PullRequest" ? "PR" : "Issue";
       const number = item.content.number;
-      const title = item.content.title;
+      // Escape curly braces in titles to prevent MDX interpretation as JSX
+      const title = item.content.title
+        .replace(/{/g, "\\{")
+        .replace(/}/g, "\\}");
       const url = item.content.url;
       const author = item.content.author?.login || "unknown";
 
+      // Hyperlight-style format: title by @author in #PR
       // Use zero-width space to prevent GitHub notifications
-      // No badge needed - items are grouped under section with label badges
-      const line = `- [#${number} ${title}](${url}) by @\u200B${author}`;
+      const line = `- ${title} by [@\u200B${author}](https://github.com/${author}) in [#${number}](${url})`;
       lines.push(line);
     });
   });
@@ -341,6 +414,7 @@ export function generateCategorySection(items, categoryName, categoryLabels) {
 
 /**
  * Generate uncategorized items section
+ * Format: title by @author in #PR (Hyperlight-style single-line format)
  *
  * @param {Array} items - All completed items
  * @returns {string} Markdown section or empty string
@@ -363,32 +437,207 @@ function generateUncategorizedSection(items) {
   const lines = uncategorizedItems.map((item) => {
     const type = item.content.__typename === "PullRequest" ? "PR" : "Issue";
     const number = item.content.number;
-    const title = item.content.title;
+    // Escape curly braces in titles to prevent MDX interpretation as JSX
+    const title = item.content.title.replace(/{/g, "\\{").replace(/}/g, "\\}");
     const url = item.content.url;
     const author = item.content.author?.login || "unknown";
 
+    // Hyperlight-style format: title by @author in #PR
     // Use zero-width space to prevent GitHub notifications
-    return `- [#${number} ${title}](${url}) by @\u200B${author}`;
+    return `- ${title} by [@\u200B${author}](https://github.com/${author}) in [#${number}](${url})`;
   });
 
-  return `## 📋 Other\n\n${lines.join("\n")}`;
+  return `---\n\n## Other\n\n${lines.join("\n")}`;
+}
+
+/**
+ * Generate Homebrew package updates section
+ * Hybrid format: Badge summary + compact table
+ *
+ * @param {Array} homebrewActivity - Array of {repo, bot, count, items}
+ * @returns {string} Markdown section with badges and table
+ */
+function generateHomebrewUpdatesSection(homebrewActivity) {
+  // Calculate totals by tap
+  let experimentalCount = 0;
+  let productionCount = 0;
+
+  homebrewActivity.forEach((activity) => {
+    if (activity.repo === "ublue-os/homebrew-experimental-tap") {
+      experimentalCount += activity.count;
+    } else if (activity.repo === "ublue-os/homebrew-tap") {
+      productionCount += activity.count;
+    }
+  });
+
+  const totalCount = experimentalCount + productionCount;
+
+  // Parse package updates from PR titles
+  const packageUpdates = parseHomebrewPackageUpdates(homebrewActivity);
+
+  // Generate badges - production first to highlight it
+  const badges = [];
+  if (productionCount > 0) {
+    badges.push(
+      `![Production Tap](https://img.shields.io/badge/production--tap-${productionCount}%20updates-blue?style=flat-square)`,
+    );
+  }
+  if (experimentalCount > 0) {
+    badges.push(
+      `![Experimental Tap](https://img.shields.io/badge/experimental--tap-${experimentalCount}%20updates-orange?style=flat-square)`,
+    );
+  }
+
+  // Generate summary table - production first
+  const summaryTable = `| Tap | Updates |
+|-----|---------|
+| production-tap | ${productionCount} |
+| experimental-tap | ${experimentalCount} |`;
+
+  // Generate detailed package tables - production first
+  let detailSections = "";
+
+  // Production tap details
+  if (Object.keys(packageUpdates.production).length > 0) {
+    const prodTable = generatePackageTable(
+      packageUpdates.production,
+      "production",
+    );
+    detailSections += `<details>
+<summary>View all production-tap updates (${productionCount})</summary>
+
+${prodTable}
+
+</details>`;
+  }
+
+  // Experimental tap details
+  if (Object.keys(packageUpdates.experimental).length > 0) {
+    const expTable = generatePackageTable(
+      packageUpdates.experimental,
+      "experimental",
+    );
+    if (detailSections) detailSections += "\n\n";
+    detailSections += `<details>
+<summary>View all experimental-tap updates (${experimentalCount})</summary>
+
+${expTable}
+
+</details>`;
+  }
+
+  return `## Homebrew Package Updates
+
+${badges.join(" ")}
+
+**${totalCount} automated updates** this month via GitHub Actions. Homebrew tap version bumps ensure Bluefin users always have access to the latest stable releases.
+
+### Quick Summary
+
+${summaryTable}
+
+${detailSections}`;
+}
+
+/**
+ * Parse package names and versions from homebrew PR titles
+ *
+ * @param {Array} homebrewActivity - Array of {repo, bot, count, items}
+ * @returns {Object} { experimental: {pkg: [versions]}, production: {pkg: [versions]} }
+ */
+function parseHomebrewPackageUpdates(homebrewActivity) {
+  const updates = {
+    experimental: {},
+    production: {},
+  };
+
+  homebrewActivity.forEach((activity) => {
+    const tapKey =
+      activity.repo === "ublue-os/homebrew-experimental-tap"
+        ? "experimental"
+        : "production";
+
+    activity.items.forEach((item) => {
+      const title = item.content.title;
+      // Pattern: "package-name version" or "package-name: version"
+      // Example: "opencode-desktop-linux 1.1.18"
+      const match = title.match(/^([a-z0-9-]+)\s+([0-9]+\.[0-9.]+)/i);
+
+      if (match) {
+        const pkgName = match[1];
+        const version = match[2];
+
+        if (!updates[tapKey][pkgName]) {
+          updates[tapKey][pkgName] = [];
+        }
+
+        updates[tapKey][pkgName].push({
+          version,
+          prNumber: item.content.number,
+          prUrl: item.content.url,
+        });
+      }
+    });
+  });
+
+  return updates;
+}
+
+/**
+ * Generate package update table for a tap
+ *
+ * @param {Object} packages - {pkgName: [{version, prNumber, prUrl}]}
+ * @param {string} tapName - "experimental" or "main"
+ * @returns {string} Markdown table
+ */
+function generatePackageTable(packages, tapName) {
+  // Sort packages by update count (descending)
+  const sortedPackages = Object.entries(packages).sort(
+    (a, b) => b[1].length - a[1].length,
+  );
+
+  const rows = sortedPackages.map(([pkgName, versions]) => {
+    // Show version progression or single version
+    const versionStr =
+      versions.length > 1
+        ? `${versions[0].version} → ${versions[versions.length - 1].version} (${versions.length} updates)`
+        : versions[0].version;
+
+    // Link to first PR (or could link to all)
+    const prLink = `[#${versions[0].prNumber}](${versions[0].prUrl})`;
+
+    return `| ${pkgName} | ${versionStr} | ${prLink} |`;
+  });
+
+  const header = `| Package | Versions | PR |
+|---------|----------|-----|`;
+
+  return [header, ...rows].join("\n");
 }
 
 /**
  * Generate bot activity section with aggregate table and details
  *
  * @param {Array} botActivity - Bot activity grouped by repo and bot
+ * @param {number} totalPRs - Total PRs (human + bot) in the period
+ * @param {number} totalBotPRs - Total bot PRs (all bots) in the period
  * @returns {string} Markdown section with table and collapsible details
  */
-function generateBotActivitySection(botActivity) {
+function generateBotActivitySection(botActivity, totalPRs, totalBotPRs) {
   if (!botActivity || botActivity.length === 0) {
     return ""; // No bot activity this period
   }
 
-  const table = generateBotActivityTable(botActivity);
+  const automationPercentage = ((totalBotPRs / totalPRs) * 100).toFixed(1);
+
+  const table = generateBotActivityTable(botActivity, totalPRs);
   const details = generateBotDetailsList(botActivity);
 
-  return `## 🤖 Bot Activity
+  return `---
+
+## Bot Activity
+
+**Automation Percentage:** ${automationPercentage}% (${totalBotPRs} bot PRs out of ${totalPRs} total PRs)
 
 ${table}
 
@@ -396,29 +645,44 @@ ${details}`;
 }
 
 /**
- * Generate bot activity summary table
+ * Generate bot activity summary table (aggregated by repository)
  *
  * @param {Array} botActivity - Array of {repo, bot, count, items}
+ * @param {number} totalPRs - Total PRs in the period (for percentage calculation)
  * @returns {string} Markdown table
  */
-export function generateBotActivityTable(botActivity) {
-  const header = `| Repository | Bot | PRs |
-|------------|-----|-----|`;
+export function generateBotActivityTable(botActivity, totalPRs) {
+  // Aggregate by repository (sum all bot activity per repo)
+  const repoAggregates = {};
 
-  const rows = botActivity.map((activity) => {
+  botActivity.forEach((activity) => {
     const repo = activity.repo
       .replace("ublue-os/", "")
       .replace("projectbluefin/", "");
-    const bot = activity.bot;
-    const count = activity.count;
-    return `| ${repo} | ${bot} | ${count} |`;
+
+    if (!repoAggregates[repo]) {
+      repoAggregates[repo] = 0;
+    }
+
+    repoAggregates[repo] += activity.count;
   });
+
+  const header = `| Repository | Bot PRs | % of Total |
+|------------|---------|------------|`;
+
+  const rows = Object.entries(repoAggregates)
+    .sort((a, b) => b[1] - a[1]) // Sort by count descending
+    .map(([repo, count]) => {
+      const percentage = ((count / totalPRs) * 100).toFixed(1);
+      return `| ${repo} | ${count} | ${percentage}% |`;
+    });
 
   return [header, ...rows].join("\n");
 }
 
 /**
  * Generate collapsible details list with full bot PR list
+ * Format: title by @author in #PR (Hyperlight-style single-line format)
  *
  * @param {Array} botActivity - Array of {repo, bot, count, items}
  * @returns {string} Markdown collapsible details
@@ -428,10 +692,16 @@ export function generateBotDetailsList(botActivity) {
     .flatMap((activity) => activity.items)
     .map((item) => {
       const number = item.content.number;
-      const title = item.content.title;
+      // Escape curly braces in titles to prevent MDX interpretation as JSX
+      const title = item.content.title
+        .replace(/{/g, "\\{")
+        .replace(/}/g, "\\}");
       const url = item.content.url;
       const repo = item.content.repository.nameWithOwner;
-      return `- [#${number} ${title}](${url}) in ${repo}`;
+      const author = item.content.author?.login || "unknown";
+
+      // Hyperlight-style format with repository context
+      return `- ${title} by [@\u200B${author}](https://github.com/${author}) in [${repo}#${number}](${url})`;
     })
     .join("\n");
 
@@ -455,31 +725,52 @@ function generateContributorsSection(contributors, newContributors) {
 
   // Section 1: New Contributors (highlighted, shown first)
   if (newContributors.length > 0) {
-    section += `## 🌟 New Contributors\n\nWelcome to our new contributors!\n\n`;
+    section += `## New Lights\n\n`;
+    section += `We welcome our newest Guardians to the project.\n\n`;
+    section += `> "I do not know what the future holds. But I know this: with you at our side, there is nothing we cannot face."\n`;
+    section += `> \n`;
+    section += `> —Commander Zavala\n\n`;
     section += `<div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>\n\n`;
 
     const newContributorCards = newContributors
-      .map(
-        (username) =>
-          `<GitHubProfileCard username="${username}" highlight={true} />`,
-      )
+      .map((username) => {
+        const sponsorUrl = getSponsorUrl(username);
+        if (sponsorUrl) {
+          return `<GitHubProfileCard username="${username}" highlight={true} sponsorUrl="${sponsorUrl}" />`;
+        }
+        return `<GitHubProfileCard username="${username}" highlight={true} />`;
+      })
       .join("\n\n");
 
     section += newContributorCards;
     section += `\n\n</div>\n\n`;
   }
 
-  // Section 2: All Contributors (without highlight)
-  section += `## 👥 Contributors\n\n`;
-  section += `Thank you to everyone who contributed this period!\n\n`;
-  section += `<div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>\n\n`;
+  // Section 2: Continuing Contributors (excluding new contributors to avoid duplicates)
+  const continuingContributors = contributors.filter(
+    (username) => !newContributors.includes(username),
+  );
 
-  const allContributorCards = contributors
-    .map((username) => `<GitHubProfileCard username="${username}" />`)
-    .join("\n\n");
+  if (continuingContributors.length > 0) {
+    section += `## Contributors\n\n`;
+    section += `> "Define yourself by your actions."\n`;
+    section += `> \n`;
+    section += `> —Lord Saladin\n\n`;
+    section += `<div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>\n\n`;
 
-  section += allContributorCards;
-  section += `\n\n</div>`;
+    const continuingContributorCards = continuingContributors
+      .map((username) => {
+        const sponsorUrl = getSponsorUrl(username);
+        if (sponsorUrl) {
+          return `<GitHubProfileCard username="${username}" sponsorUrl="${sponsorUrl}" />`;
+        }
+        return `<GitHubProfileCard username="${username}" />`;
+      })
+      .join("\n\n");
+
+    section += continuingContributorCards;
+    section += `\n\n</div>`;
+  }
 
   return section;
 }
