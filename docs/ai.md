@@ -38,10 +38,7 @@ The [AI Lab extension](https://developers.redhat.com/products/podman-desktop/pod
 
 ![image](/img/user-attachments/e5557952-3e62-499e-93a9-934c4d452be0.png)
 
-1. Open Podman Desktop. 
-2. Add AI Lab extension from the homepage, or get it from the Extension page.
-3. **AI Lab** will appear on the sidebar, click to open it
-4. Enable GPU Acceleration
+Read [AI Lab Extension documentation](https://podman-desktop.io/docs/ai-lab) or visit its [GitHub page](https://github.com/containers/podman-desktop-extension-ai-lab) for more information.
 
 ### Ramalama
 
@@ -58,7 +55,7 @@ rl run gpt-oss:20b
 You can also serve the models locally:
 
 ```
-rl serve deepseek-v3.2
+rl serve glm-4.7-flash
 ```
 
 Then go to `http://127.0.0.0:8080` in your browser.
@@ -82,11 +79,6 @@ quay.io/ramalama/rocm                      latest      8875feffdb87  5 days ago 
 - Strix Halo users: `ramalama serve --image docker.io/kyuz0/amd-strix-halo-toolboxes:vulkan-radv gpt-oss:latest`
   - Check out [AMD Strix Halo Llama.cpp Toolboxes](https://github.com/kyuz0/amd-strix-halo-toolboxes) and [Donato Capitella's channel](https://www.youtube.com/@donatocapitella) for more information
  
-### Running AI Agents in VS Code
-
-Here is an example of using devcontainers to run agents inside containers for isolation: 
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/w3kI6XlZXZQ?si=5pygGs5E_Qedf-S8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ### Docker Model Runner
 
@@ -101,7 +93,7 @@ docker model run ai/smollm2
 Pull a model to cache it locally:
 ```
 docker model pull ai/devstral-small-2  # from Docker Hub
-docker model pull hf.co/noctrex/GLM-4.7-MXFP4_MOE-GGUF # from HuggingFace
+docker model pull hf.co/Qwen/Qwen3-32B # from HuggingFace
 ```
 
 ### LM Studio (WIP)
@@ -134,12 +126,17 @@ The following AI-focused command-line tools are available via homebrew, install 
 | [ramalama](https://formulae.brew.sh/formula/ramalama)               | Manage and run AI models locally with containers                 |
 | [whisper-cpp](https://formulae.brew.sh/formula/whisper-cpp)         | High-performance inference of OpenAI's Whisper model             |
 
+### Use CLI Agents with Devcontainers in VS Code
+
+Here is an example of using devcontainers to run agents inside containers for isolation: 
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/w3kI6XlZXZQ?si=5pygGs5E_Qedf-S8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Use with AI Desktop Apps
 
 ### Alpaca
 
-For light chatbot usage with local models, we recommend that users [install Alpaca](https://flathub.org/apps/com.jeffser.Alpaca) to manage and chat with your LLM models within a native GNOME desktop application. Alpaca supports Nvidia and AMD[^1] acceleration natively.
+For light chatbot usage, we recommend that users [install Alpaca](https://flathub.org/apps/com.jeffser.Alpaca) to manage and chat with your LLM models within a native GNOME desktop application. Alpaca supports Nvidia and AMD[^1] acceleration natively.
 
 :::tip[Only a keystroke away]
 
@@ -149,9 +146,9 @@ Bluefin binds `Ctrl`-`Alt`-`Backspace` as a quicklaunch for Alpaca automatically
 
 #### Configuration
 
-![Alpaca](/img/user-attachments/104c5263-5d34-497a-b986-93bb0a41c23e.png)
+![Screenshot of Alpaca settings modal](/img/user-attachments/104c5263-5d34-497a-b986-93bb0a41c23e.png)
 
-![image](/img/user-attachments/9fd38164-e2a9-4da1-9bcd-29e0e7add071.png)
+![Screenshot of a chat session with local LLM in Alpaca](/img/user-attachments/9fd38164-e2a9-4da1-9bcd-29e0e7add071.png)
 
 ### Goose Desktop (WIP)
 
