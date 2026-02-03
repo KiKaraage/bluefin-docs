@@ -38,6 +38,11 @@ The [AI Lab extension](https://developers.redhat.com/products/podman-desktop/pod
 
 ![image](/img/user-attachments/e5557952-3e62-499e-93a9-934c4d452be0.png)
 
+1. Open Podman Desktop. 
+2. Add AI Lab extension from the homepage, or get it from the Extension page.
+3. **AI Lab** will appear on the sidebar, click to open it
+4. Enable GPU Acceleration
+
 ### Ramalama
 
 Install [Ramalama](https://github.com/containers/ramalama) via `brew install ramalama`: manage local models and is the preferred default experience. It's for people who work with local models frequently and need advanced features. It offers the ability to pull models from [HuggingFace](https://huggingface.co/models), [Ollama](https://ollama.com), and any container registry. By default it pulls from ollama.com, check the [Ramalama documentation](https://github.com/containers/ramalama/tree/main/docs) for more information.
@@ -151,7 +156,7 @@ Bluefin binds `Ctrl`-`Alt`-`Backspace` as a quicklaunch for Alpaca automatically
 ### Goose Desktop (WIP)
 
 - Established desktop experience, recently ported as Brew cask
-- Come with built-in tools as extensions, extendable using MCP
+- Work with extensions (built-in tools & MCP)
 - Let you use existing CLI instances of Claude Code, Cursor Agent, Codex or Gemini CLI, in addition to inferences from Ollama and many cloud providers
 - Available in Flathub soon!
 
@@ -163,6 +168,7 @@ brew install ublue-os/tap/goose-linux
 ### OpenCode Desktop (WIP)
 
 - Fresh from the oven, desktop version is currently in beta
+- Enhanced UX for agentic coding, including built-in explore and review subagents, file preview, diff viewer, and terminal access
 - Focused on agentic coding experiences and easy access to switch between models from multiple providers when needed
 - Coming with its own server instance, but you can connect to any instances of OpenCode, including your homelab or VPS, easily.
 
